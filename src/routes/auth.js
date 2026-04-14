@@ -22,15 +22,22 @@ authRouter.post('/signup', async (req, res) => {
             email: normalizedEmail,
             password: passwordHash
         });
-        await user.save();
-        res.send("User saved successfully");
+        const savedUser = await user.save();
+        const token = await savedUser.getJWT()
+        res.cookie('token', token, {
+            expires: new Date(Date.now() + 8 * 3600000)
+        })
+        res.json({
+            message: "User saved successfully",
+            data: savedUser
+        });
     }
     catch (err) {
         console.error('Error in saving user:', err.message);
         if (err.code === 11000) {
             return res.status(409).send('Email already registered');
         }
-        res.status(400).send('Error in saving user');
+        res.status(400).send('Error in saving user: ' + err.message);
     }
 
 });
